@@ -143,10 +143,9 @@ We find that it normalises to
 This explains why we can use inequality proofs on `ℕ`
 when trying to prove inequalities on `Fin` values.
 
-
 When one writes `fin1/3≤fin2/3 : fin1/3 ≤ fin2/3`
 the type is normalised to `1 N.≤ 2` as one can see
-by using the `C-c C-n` hotkey below.
+by using the `C-c C-n` hotkey in the hole below.
 
 ```
 typeOfFin1/3≤fin2/3 : Set
@@ -156,4 +155,9 @@ typeOfFin1/3≤fin2/3 = {! fin1/3 ≤ fin2/3 !}
 This explains why a value of type `1 N.≤ 2` will
 suffice as a proof for `fin1/3≤fin2/3 : fin1/3 ≤ fin2/3`.
 
-
+If you're familiar with Haskell another way to think about the
+definition of `Data.Fin._≤_` is as a more powerful _type synonym_.  In
+Haskell, type synonyms are limited to substituting variables specified
+on the left-hand side into their corresponding places on the
+right-hand side, whereas in Agda the full machinery of function
+application and normalisation is available.
