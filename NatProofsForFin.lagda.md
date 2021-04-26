@@ -154,6 +154,6 @@ typeOfFin1/3≤fin2/3 = {! fin1/3 ≤ fin2/3 !}
 ```
 
 This explains why a value of type `1 N.≤ 2` will
-suffice as a proof for `fin1/3≤fin2/3`.
+suffice as a proof for `fin1/3≤fin2/3 : fin1/3 ≤ fin2/3`.
 
 
