@@ -1,0 +1,1 @@
+- add post about Data.Fin._<_ vs Data.Nat._<_
