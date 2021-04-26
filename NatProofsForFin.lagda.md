@@ -1,4 +1,5 @@
 <!-- -*-agda2-*- -->
+# Using inequality proofs from `ℕ` for the `Fin` data structure
 
 The Finite Sets data structure in module `Data.Fin` is
 useful, among other things, for indexing into the vector
