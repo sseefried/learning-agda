@@ -1,4 +1,4 @@
-# In Agda you can, and sometimes need to do an `import` before a `module` declarations
+# In Agda you can, and sometimes need to do an `import` before a `module` declaration
 
 It turns out that in Agda you sometimes need to do `import`s before `module` declarations.
 There is nothing like this in Haskell and, in fact, its invalid syntax.
