@@ -35,4 +35,4 @@ you get:
     {A.a : Level} {A : Set A.a} {ℓ : Level} (P : A → Set ℓ) {x y : A} → x ≡ y → P x → P y
 
 
-Now that's better!
+Now that's better! You can try it out in this module.
