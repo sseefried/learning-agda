@@ -1,5 +1,8 @@
 <!-- -*-agda2-*- -->
 
+# A monoid is a category of one object, demonstrated with endofunctions under function composition and the identity function.
+
+
 This module relies on Conal Elliott's `denotational-hardware` repo on
 [GitHub](https://github.com/conal/denotational-hardware/)
 
