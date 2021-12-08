@@ -58,8 +58,9 @@ module FunctionMonoid (A : Set) where
 ```
 
 But we can also express it as a category of one object. The singular
-object is just unit (`tt`) but the morphisms are all the functions
-from `A → A`. This is a rather odd category, but everything works out!
+object can be anything, but we've chosen unit (`tt`). The morphisms
+are all the functions from `A → A`. This is a rather odd category, but
+everything works out!
 
 If you were to draw this category down on a piece of paper, you would
 have a single object, represented perhaps a circle on the page, with
