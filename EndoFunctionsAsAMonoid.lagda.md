@@ -54,8 +54,14 @@ module FunctionMonoid (A : Set) where
   fun-isMonoid = record { isSemigroup = fun-isSemigroup ; identity = ((λ x → refl) , (λ x → refl)) }
 ```
 
-But we can also express it as a category of one object. The singular object is just unit (`tt`)
-but the morphisms are all the functions from `A → A`.
+But we can also express it as a category of one object. The singular
+object is just unit (`tt`) but the morphisms are all the functions
+from `A → A`. This is a rather odd category, but everything works out!
+
+If you were to draw this category down on a piece of paper, you would
+have a single object, represented perhaps a circle on the page, with
+many arrows coming out from this circle back to itself representing
+the arrows.
 
 ```
 _⇨ᵒ_ : {A : Set} → Unit → Unit → Set

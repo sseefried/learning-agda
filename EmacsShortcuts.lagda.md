@@ -6,6 +6,7 @@
 ```
 module EmacsShortcuts where
 
+open import Agda.Primitive
 open import Relation.Binary.PropositionalEquality
 
 
@@ -36,3 +37,8 @@ you get:
 
 
 Now that's better! You can try it out in this module.
+
+```
+_ : Set
+_ = {! subst !}
+```
