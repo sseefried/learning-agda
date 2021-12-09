@@ -80,5 +80,4 @@ instance
 
   _ : {A : Set} → Laws.Category (_⇨ᵒ_ {A})
   _ = record { identityˡ = refl ; identityʳ = refl ; assoc = refl ; ∘≈ = λ h≈k f≈g → cong₂ _∘ᴬ_ h≈k f≈g  }
-
 ```

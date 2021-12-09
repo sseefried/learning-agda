@@ -13,7 +13,7 @@ parameterised on a category, that provides a function `toMonoid`
 
 First, we'll start with the preamble.
 
-```
+```agda
 
 open import Relation.Binary using (Rel; Setoid; IsEquivalence)
 
@@ -40,7 +40,7 @@ this case they are just values of type `A`.
 
 We define the morphism arrow as follows:
 
-```
+```agda
 _⇨_ : ⊤ {ℓ} → ⊤ → Set a
 tt ⇨ tt = A
 ```
@@ -59,7 +59,7 @@ CategoryAndLaws = Σ (Category {obj = ⊤} _⇨_)
 Now we are able to define the `Monoid⇨Category` module.
 
 
-```
+```agda
 module Monoid⇒Category {_≈_ : Rel A ℓ} {_∙_ : A → A → A} {ε : A} (is-monoid : IsMonoid _≈_ _∙_ ε) where
 
   open IsMonoid ⦃ … ⦄ public
@@ -87,7 +87,7 @@ module Monoid⇒Category {_≈_ : Rel A ℓ} {_∙_ : A → A → A} {ε : A} (i
 And the reverse direction is done as follows.
 
 
-```
+```agda
 module Category⇨Monoid ((category , equivalent , categoryLaws) : CategoryAndLaws) where
   open Laws.Category ⦃ … ⦄ public
   instance
