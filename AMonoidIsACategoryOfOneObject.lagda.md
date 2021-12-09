@@ -49,7 +49,7 @@ Next we provide a convenient package of a `Category`, `Equivalent` and
 `Laws.Category` value.  We use a dependent product to satisfy the
 dependencies of the later values on the previous values.
 
-```
+```agda
 CategoryAndLaws :  Set (a ⊔ lsuc ℓ)
 CategoryAndLaws = Σ (Category {obj = ⊤} _⇨_)
                     (λ cat →  Σ (Equivalent ℓ {obj = ⊤} _⇨_)
