@@ -16,12 +16,49 @@ record IStack {a : Level} {A : Set a} (Stack : Set a → Set a) : Set (lsuc a) w
     empty : Stack A
     push  : A → Stack A → Stack A
     pop   : Stack A → Maybe A × Stack A
+
+    -- Conal: this is axiomatic semantics not denotational
     ⟦_⟧   : Stack A → (ℕ → Maybe A) -- meaning function
     empty-law : ⟦ empty ⟧ ≗ (λ _ → nothing)
     push-law  : {x : A} {s : Stack A}
               → ⟦ push x s ⟧ ≗ λ n → if n ≡ᵇ 0 then just x else ⟦ s ⟧ (n ∸ 1)
     pop-law-1 : {s : Stack A} → proj₁ (pop s) ≡ ⟦ s ⟧ 0
     pop-law-2 : {s : Stack A} → ⟦ proj₂ (pop s) ⟧ ≗ λ n → ⟦ s ⟧ (n + 1)
+
+{-
+
+Start with denotation.
+
+
+How do we come up with an interface.
+
+What algebraic language do you like speaking?
+That's my API
+
+Question: how does stack work in C.
+
+- Mutable stack representation can't be a representation of the immutable list denotation
+  (but it could be part of it)
+
+Lists - monoids, functors etc - the algebra would be suggested from these
+
+Distinction:
+-
+-
+
+
+
+-}
+
+{-
+
+- have we got all the laws?
+- have we got enough?
+- have we got too many?
+- are two IStack instances obervationally equal?
+
+-}
+
 
 open IStack ⦃ … ⦄ public
 
