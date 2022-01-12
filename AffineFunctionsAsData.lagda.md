@@ -9,6 +9,7 @@ import Data.Nat.Coprimality as CP
 open import Data.Product
 open import Data.Rational
 open import Data.Rational.Properties
+import Data.Rational.Properties as ℚ
 open import Data.Rational.Solver
 import Data.Rational as ℚ
 open import Level using (0ℓ)
@@ -257,8 +258,6 @@ Another way to say this is that `⟦_⟧` is not surjective.
 ```
 module Attempt2 where
 
-  open import Relation.Binary.PropositionalEquality
-
 ```
 
 Our equivalence relation will just be _extensional equality_ on functions.
@@ -270,7 +269,14 @@ The monoidal operation will be `_⊹_` and we define `const0ℚ` as our identity
   const0ℚ = λ _ → 0ℚ
 
   module AffineFunctionMonoid where
+    _∙_ : (ℚ → ℚ) → (ℚ → ℚ) → (ℚ → ℚ)
+    _∙_ = _⊹_
+
+    ε : (ℚ → ℚ)
+    ε = const0ℚ
+
     open import Relation.Binary.PropositionalEquality
+             using (_≡_; _≗_; _→-setoid_; module ≡-Reasoning; cong₂)
     open import Algebra.Definitions {A = ℚ → ℚ } _≗_
     open import Algebra.Structures {A = ℚ → ℚ} _≗_
 
@@ -279,9 +285,164 @@ The monoidal operation will be `_⊹_` and we define `const0ℚ` as our identity
     ℚ→ℚ-setoid : Setoid 0ℓ 0ℓ
     ℚ→ℚ-setoid = ℚ →-setoid ℚ
 
+    open Setoid ⦃ … ⦄ hiding (refl; sym; trans) public
+    instance
+      _ = ℚ→ℚ-setoid
 
+    isMonoid : IsMonoid _∙_ ε
+    isMonoid =
+        record
+          { isSemigroup = isSemigroup
+          ; identity    = identityˡ , identityʳ
+          }
+      where
+        open ≡-Reasoning
+
+        ∙-cong : {f f′ g g′ : ℚ → ℚ} → f ≈ f′ → g ≈ g′ → f ∙ g ≈ f′ ∙ g′
+        ∙-cong {f} {f′} {g} {g′} f≈f′ g≈g′ x =
+          begin
+            (f ∙ g) x
+          ≡⟨⟩
+            f x + g x
+          ≡⟨ cong₂ _+_ (f≈f′ x) (g≈g′ x) ⟩
+            f′ x + g′ x
+          ≡⟨⟩
+            (f′ ∙ g′) x
+          ∎
+
+        isMagma : IsMagma _∙_
+        isMagma =
+          record
+            { isEquivalence = isEquivalence
+            ; ∙-cong = ∙-cong
+            }
+
+        assoc : ∀ f g h → (f ∙ g) ∙ h ≈ f ∙ (g ∙ h)
+        assoc f g h x =
+          begin
+            ((f ∙ g) ∙ h) x
+          ≡⟨⟩
+            (f x + g x) + h x
+          ≡⟨ +-assoc (f x) (g x) (h x) ⟩
+            f x + (g x + h x)
+          ≡⟨⟩
+            (f ∙ (g ∙ h)) x
+          ∎
+
+
+        isSemigroup : IsSemigroup _∙_
+        isSemigroup =
+          record
+            { isMagma = isMagma
+            ; assoc   = assoc
+            }
+
+        identityˡ : ∀ f → ε ∙ f ≈ f
+        identityˡ f x =
+          begin
+            (ε ∙ f) x
+          ≡⟨⟩
+            0ℚ + f x
+          ≡⟨ +-identityˡ (f x) ⟩
+            f x
+          ∎
+
+        identityʳ : ∀ f → f ∙ ε ≈ f
+        identityʳ f x =
+          begin
+            (f ∙ ε) x
+          ≡⟨⟩
+            f x + 0ℚ
+          ≡⟨ +-identityʳ (f x) ⟩
+            f x
+          ∎
+```
+
+Now that we have shown that the denotation is a monoid let's prove
+that the representation is also a monoid.
 
 ```
+  module AFIsMonoid where
+    open import Relation.Binary.PropositionalEquality
+    open import Algebra.Definitions {A = AF} _≡_
+    open import Algebra.Structures {A = AF} _≡_
+
+    _∙_ : AF → AF → AF
+    _∙_ = _⊕_
+
+    ε : AF
+    ε = 0ℚ , 0ℚ
+
+    isMonoid : IsMonoid _∙_ ε
+    isMonoid =
+        record
+          { isSemigroup = isSemigroup
+          ; identity    = identityˡ , identityʳ
+          }
+      where
+        open ≡-Reasoning
+
+        assoc : ∀ f g h → (f ∙ g) ∙ h ≡ f ∙ (g ∙ h)
+        assoc f@(f₁ , f₂) g@(g₁ , g₂) h@(h₁ , h₂) =
+          cong₂ _,_ (+-assoc f₁ g₁ h₁) (+-assoc f₂ g₂ h₂)
+
+        isSemigroup : IsSemigroup _∙_
+        isSemigroup =
+          record
+            { isMagma = isMagma _∙_
+            ; assoc   = assoc
+            }
+
+        identityˡ : ∀ f → ε ∙ f ≡ f
+        identityˡ f@(f₁ , f₂) = cong₂ _,_ (+-identityˡ f₁) (+-identityˡ f₂)
+
+        identityʳ : ∀ f → f ∙ ε ≡ f
+        identityʳ f@(f₁ , f₂) = cong₂ _,_ (+-identityʳ f₁) (+-identityʳ f₂)
+```
+
+```
+  open import Relation.Binary.PropositionalEquality using (_≗_; module ≡-Reasoning; cong; sym)
+
+  monoid-homo-id : ⟦ AFIsMonoid.ε ⟧ ≗ AffineFunctionMonoid.ε
+  monoid-homo-id x =
+    begin
+      ⟦ 0ℚ , 0ℚ ⟧ x
+    ≡⟨⟩
+      0ℚ * x + 0ℚ
+    ≡⟨ cong (λ □ → □ + 0ℚ) (*-zeroˡ x)  ⟩
+      0ℚ + 0ℚ
+    ≡⟨⟩
+      const0ℚ x
+    ∎
+    where
+      open ≡-Reasoning
+
+  monoid-homo-op : ∀ f g → ⟦ f AFIsMonoid.∙ g ⟧ ≗ ⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧
+  monoid-homo-op f@(f₁ , f₂) g@(g₁ , g₂) x =
+    begin
+      ⟦ f AFIsMonoid.∙ g ⟧ x
+    ≡⟨⟩
+      (f₁ + g₁) * x + (f₂ + g₂)
+    ≡⟨ cong (λ □ → □ + (f₂ + g₂)) (*-distribʳ-+ x f₁ g₁) ⟩
+      (f₁ * x + g₁ * x) + (f₂ + g₂)
+    ≡⟨ +-assoc (f₁ * x) (g₁ * x) (f₂ + g₂) ⟩
+      f₁ * x + (g₁ * x + (f₂ + g₂))
+    ≡⟨ cong (λ □ → f₁ * x + □) (+-comm (g₁ * x ) (f₂ + g₂)) ⟩
+      f₁ * x + ((f₂ + g₂) + g₁ * x)
+    ≡⟨ cong (λ □ → f₁ * x + □) (+-assoc f₂ g₂ (g₁ * x)) ⟩
+      f₁ * x + (f₂ + (g₂ + g₁ * x))
+    ≡⟨ cong (λ □ → f₁ * x + (f₂ + □)) (+-comm g₂ (g₁ * x)) ⟩
+      f₁ * x + (f₂ + (g₁ * x + g₂))
+    ≡⟨ sym (+-assoc (f₁ * x) f₂ (g₁ * x + g₂)) ⟩
+      (f₁ * x + f₂) + (g₁ * x + g₂)
+    ≡⟨⟩
+      (⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧) x
+    ∎
+    where
+      open ≡-Reasoning
+
+```
+
 
 
 ## An API for affine transformations
