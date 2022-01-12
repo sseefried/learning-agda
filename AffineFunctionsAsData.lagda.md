@@ -8,6 +8,8 @@ open import Data.Nat using (ℕ)
 import Data.Nat.Coprimality as CP
 open import Data.Product
 open import Data.Rational
+open import Data.Rational.Properties
+open import Data.Rational.Solver
 import Data.Rational as ℚ
 open import Level using (0ℓ)
 open import Algebra.Core
@@ -58,7 +60,7 @@ then
 
 ```
 _⊕_ : AF → AF → AF
-(a , b) ⊕ (c , d) = (a ℚ.+ c , b ℚ.+ d)
+(a , b) ⊕ (c , d) = (a + c , b + d)
 ```
 
 Now let's tackle function composition. Taking the same definition of
@@ -68,85 +70,216 @@ Now let's tackle function composition. Taking the same definition of
 
 ```
 _∘_ : AF → AF → AF
-(a , b) ∘ (c , d) = (a ℚ.* c , a ℚ.* d ℚ.+ b)
+(a , b) ∘ (c , d) = (a * c , a * d + b)
 ```
 
 The meaning function is easy to define.
 
 ```
 ⟦_⟧ : AF → (ℚ → ℚ)
-⟦ (a , b) ⟧ = λ x → a ℚ.* x ℚ.+ b
+⟦ (a , b) ⟧ = λ x → a * x + b
 ```
 
-## An API for monoids
+## An API for monoids: attempt 1
 
 Affine functions clearly form a monoid with the identity element being the function `f(x) = 0` and the binary operation of addition. Let's quickly prove that.
 
-```
-open import Relation.Binary.PropositionalEquality
-
-IsAffine : (ℚ → ℚ) → Set
-IsAffine f = ∃[ a ] ∃[ b ] ∀ x → f x ≡ a ℚ.* x ℚ.+ b
-```
-
-Let's prove this for a basic affine function
+But first, let's define what it means to add two functions.
 
 ```
-ℚ[_] : ℕ → ℚ
-ℚ[ x ] = mkℚ+ x 1 (CP.sym (CP.1-coprimeTo x))
+_⊹_ : Op₂ (ℚ → ℚ)
+(f ⊹ g) x = f x + g x
 ```
 
-```
-10x+3 : ℚ → ℚ
-10x+3 = λ x → (ℚ[ 10 ]) * x + ℚ[ 3 ]
+We can now beging our attempt in earnest.
 
-10x+3-isAffine : IsAffine 10x+3
-10x+3-isAffine = (ℚ[ 10 ] , ℚ[ 3 ] , λ _ → refl )
+```
+module Attempt1 where
+  open import Relation.Binary.PropositionalEquality
+
+  IsAffine : (ℚ → ℚ) → Set
+  IsAffine f = ∃[ a ] ∃[ b ] ((x : ℚ) → f x ≡ a * x + b)
+  ```
+
+  Let's prove this for a basic affine function
+
+  ```
+  ℚ[_] : ℕ → ℚ
+  ℚ[ x ] = mkℚ+ x 1 (CP.sym (CP.1-coprimeTo x))
+  ```
+
+  ```
+  10x+3 : ℚ → ℚ
+  10x+3 = λ x → (ℚ[ 10 ]) * x + ℚ[ 3 ]
+
+  10x+3-isAffine : IsAffine 10x+3
+  10x+3-isAffine = (ℚ[ 10 ] , ℚ[ 3 ] , λ _ → refl )
 ```
 
 Now we can package up the affine functions as follows
 
 ```
-AffineFunction : Set
-AffineFunction = Σ (ℚ → ℚ) IsAffine
+  AffineFunction : Set
+  AffineFunction = Σ (ℚ → ℚ) IsAffine
 
-10x+3-affine : AffineFunction
-10x+3-affine = (10x+3 , 10x+3-isAffine)
-
+  10x+3-affine : AffineFunction
+  10x+3-affine = (10x+3 , 10x+3-isAffine)
 ```
 
 ```
-module AffineFunctionMonoid where
-  open import Relation.Binary.PropositionalEquality
-  open import Algebra.Structures {A = ℚ → ℚ} _≗_
-
-  _⊹_ : Op₂ (ℚ → ℚ)
-  (f ⊹ g) x = f x + g x
+  +-isAffine : {f g : ℚ → ℚ} →  IsAffine f → IsAffine g → IsAffine (f ⊹ g)
+  +-isAffine {f} {g} (a , b , p₁) (c , d , p₂) = (a + c , b + d , pf′ )
+    where
+      open ≡-Reasoning
+      open +-*-Solver
+      pf′ : (x : ℚ) → f x + g x ≡ (a + c) * x + (b + d)
+      pf′ x =
+          f x + g x
+        ≡⟨ cong₂ _+_ (p₁ x) (p₂ x)   ⟩
+         (a * x + b) + (c * x + d)
+        ≡⟨ solve 5 (λ a b c d x →
+             ((a :* x :+ b) :+ (c :* x :+ d)) :=
+             ((a :+ c) :* x :+ (b :+ d))) refl a b c d x ⟩
+          (a + c) * x + (b + d)
+        ∎
 
   _∙_ : Op₂ AffineFunction
-  (f , pᶠ) ∙ (g , pᵍ) = (f ⊹ g , pf pᶠ pᵍ)
-    where
-      pf : IsAffine f → IsAffine g → IsAffine (λ x → f x + g x)
-      pf (a , b , p₁) (c , d , p₂) = (a + c , b + d , pf2 )
-        where
-          open ≡-Reasoning
-          pf2 : (x : ℚ) → f x + g x ≡ (a + c) * x + (b + d)
-          pf2 x =
-            begin
-              f x + g x
-            ≡⟨ cong₂ (λ □ ◯ →  □ + ◯) (p₁ x) (p₂ x)   ⟩
-             (a * x + b) + (c * x + d)
-            ≡⟨ {!!} ⟩
-              (a + c) * x + (b + d)
-            ∎
+  (f , pᶠ) ∙ (g , pᵍ) = (f ⊹ g , +-isAffine pᶠ pᵍ)
 
 
+  const-0ℚ-isAffine : IsAffine (λ _ → 0ℚ)
+  const-0ℚ-isAffine = (0ℚ , 0ℚ , pf)
+      where
+        open +-*-Solver
+        pf : (x : ℚ) → 0ℚ ≡ 0ℚ * x + 0ℚ
+        pf x =
+          solve 1 (λ x → con 0ℚ := (con 0ℚ :* x) :+ con 0ℚ) refl x
 
   ε : AffineFunction
-  ε = ((λ _ → ℚ[ 0 ]) , {!!} )
+  ε = (λ _ → 0ℚ) , const-0ℚ-isAffine
 
---  affineFunctionIsMonoid : IsMonoid _∙_ ε
---  affineFunctionIsMonoid  = {!!}
+
+  infix 4 _≈_
+  _≈_ : AffineFunction → AffineFunction → Set
+  (_ , (a , b , _)) ≈ (_ , (c , d , _)) = a ≡ c × b ≡ d
+      -- the proofs are unimportant
+  -- this is a specification but it's not simple enough.
+  -- TODO: Is this true?
+
+
+  module AffineFunctionMonoid where
+    open import Relation.Binary.PropositionalEquality
+    open import Algebra.Definitions {A = AffineFunction} _≈_
+    open import Algebra.Structures {A = AffineFunction} _≈_
+
+    open import Relation.Binary.Bundles
+
+    AffineFunction-setoid : Setoid 0ℓ 0ℓ
+    AffineFunction-setoid = record { Carrier = AffineFunction
+                  ; _≈_ = _≈_
+                  ; isEquivalence =
+                      record { refl = refl , refl
+                             ; sym = λ (x₁≈y₁ , x₂≈y₂) →  sym x₁≈y₁ , sym x₂≈y₂
+                             ; trans = λ (i₁≈j₁ , i₂≈j₂) (j₁≈k₁ , j₂≈k₂ ) →
+                                         trans i₁≈j₁ j₁≈k₁ , trans i₂≈j₂ j₂≈k₂
+                             }
+                  }
+
+    affineFunctionIsMonoid : IsMonoid _∙_ ε
+    affineFunctionIsMonoid =
+      record
+        { isSemigroup = affineFunctionIsSemigroup
+        ; identity = identityˡ , identityʳ
+        }
+      where
+        open import Relation.Binary.Reasoning.Setoid AffineFunction-setoid
+        ∙-cong : Congruent₂ _∙_ -- ∀ {x y u v} → x ≈ y → u ≈ v → x ∙ u ≈ y ∙ v
+        ∙-cong {x@(_ , (x₁ , x₂ , _))}
+               {y@(_ , (y₁ , y₂ , _))}
+               {u@(_ , (u₁ , u₂ , _))}
+               {v@(_ , (v₁ , v₂ , _))}
+               x≈y@(x₁≈y₁ , x₂≈y₂)
+               u≈v@(u₁≈v₁ , u₂≈v₂) =
+          begin
+            x ∙ u
+          ≈⟨ cong₂ _+_ x₁≈y₁ u₁≈v₁ , cong₂ _+_ x₂≈y₂ u₂≈v₂ ⟩
+            y ∙ v
+          ∎
+
+        affineFunctionIsMagma : IsMagma _∙_
+        affineFunctionIsMagma =
+          record { isEquivalence = Setoid.isEquivalence AffineFunction-setoid
+                 ; ∙-cong = λ {x} {y} {u} {v} → ∙-cong {x} {y} {u} {v}
+                 }
+
+        assoc : ∀ f g h →  (f ∙ g) ∙ h ≈ f ∙ (g ∙ h)
+        assoc f@(_ , (f₁ , f₂ , _)) g@(_ , (g₁ , g₂ , _)) h@(_ , (h₁ , h₂ , _)) =
+          begin
+            (f ∙ g) ∙ h
+          ≈⟨ +-assoc f₁ g₁ h₁ , +-assoc f₂ g₂ h₂  ⟩
+            f ∙ (g ∙ h)
+          ∎
+
+        affineFunctionIsSemigroup : IsSemigroup _∙_
+        affineFunctionIsSemigroup =
+          record
+            { isMagma = affineFunctionIsMagma
+            ; assoc = assoc
+            }
+
+
+
+        identityˡ : ∀ f → ε ∙ f ≈ f
+        identityˡ f@(_ , (a , b , _)) =
+          begin
+            ε ∙ f
+          ≈⟨ +-identityˡ a , +-identityˡ b ⟩
+            f
+          ∎
+
+
+        identityʳ : ∀ f → f ∙ ε ≈ f
+        identityʳ f@(_ , (a , b , _)) =
+          begin
+            f ∙ ε
+          ≈⟨ +-identityʳ a , +-identityʳ b ⟩
+            f
+          ∎
+```
+
+## An API for monoids: attempt 2
+
+I was quite unhappy with the definition of `_≈_` in Attempt 1 above.
+In this attempt the denotation will just be `ℚ → ℚ`. The image of the
+meaning function `⟦_⟧ : AF → (ℚ → ℚ)` will actually just be the affine functions.
+Another way to say this is that `⟦_⟧` is not surjective.
+
+```
+module Attempt2 where
+
+  open import Relation.Binary.PropositionalEquality
+
+```
+
+Our equivalence relation will just be _extensional equality_ on functions.
+The monoidal operation will be `_⊹_` and we define `const0ℚ` as our identity element.
+
+
+```
+  const0ℚ : ℚ → ℚ
+  const0ℚ = λ _ → 0ℚ
+
+  module AffineFunctionMonoid where
+    open import Relation.Binary.PropositionalEquality
+    open import Algebra.Definitions {A = ℚ → ℚ } _≗_
+    open import Algebra.Structures {A = ℚ → ℚ} _≗_
+
+    open import Relation.Binary.Bundles
+
+    ℚ→ℚ-setoid : Setoid 0ℓ 0ℓ
+    ℚ→ℚ-setoid = ℚ →-setoid ℚ
+
+
 
 ```
 
