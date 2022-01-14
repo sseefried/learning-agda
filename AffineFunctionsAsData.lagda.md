@@ -146,7 +146,7 @@ So a _sufficient_ definition is as follows
 
 ```
 _⊕_ : AF → AF → AF
-(a , b) ⊕ (c , d) = (a + c , b + d)
+(f₁ , f₂) ⊕ (g₁ , g₂) = (f₁ + g₁ , f₂ + g₂)
 ```
 
 ```
