@@ -400,48 +400,107 @@ that the representation is also a monoid.
         identityʳ f@(f₁ , f₂) = cong₂ _,_ (+-identityʳ f₁) (+-identityʳ f₂)
 ```
 
-```
-  open import Relation.Binary.PropositionalEquality using (_≗_; module ≡-Reasoning; cong; sym)
-
-  monoid-homo-id : ⟦ AFIsMonoid.ε ⟧ ≗ AffineFunctionMonoid.ε
-  monoid-homo-id x =
-    begin
-      ⟦ 0ℚ , 0ℚ ⟧ x
-    ≡⟨⟩
-      0ℚ * x + 0ℚ
-    ≡⟨ cong (λ □ → □ + 0ℚ) (*-zeroˡ x)  ⟩
-      0ℚ + 0ℚ
-    ≡⟨⟩
-      const0ℚ x
-    ∎
-    where
-      open ≡-Reasoning
-
-  monoid-homo-op : ∀ f g → ⟦ f AFIsMonoid.∙ g ⟧ ≗ ⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧
-  monoid-homo-op f@(f₁ , f₂) g@(g₁ , g₂) x =
-    begin
-      ⟦ f AFIsMonoid.∙ g ⟧ x
-    ≡⟨⟩
-      (f₁ + g₁) * x + (f₂ + g₂)
-    ≡⟨ cong (λ □ → □ + (f₂ + g₂)) (*-distribʳ-+ x f₁ g₁) ⟩
-      (f₁ * x + g₁ * x) + (f₂ + g₂)
-    ≡⟨ +-assoc (f₁ * x) (g₁ * x) (f₂ + g₂) ⟩
-      f₁ * x + (g₁ * x + (f₂ + g₂))
-    ≡⟨ cong (λ □ → f₁ * x + □) (+-comm (g₁ * x ) (f₂ + g₂)) ⟩
-      f₁ * x + ((f₂ + g₂) + g₁ * x)
-    ≡⟨ cong (λ □ → f₁ * x + □) (+-assoc f₂ g₂ (g₁ * x)) ⟩
-      f₁ * x + (f₂ + (g₂ + g₁ * x))
-    ≡⟨ cong (λ □ → f₁ * x + (f₂ + □)) (+-comm g₂ (g₁ * x)) ⟩
-      f₁ * x + (f₂ + (g₁ * x + g₂))
-    ≡⟨ sym (+-assoc (f₁ * x) f₂ (g₁ * x + g₂)) ⟩
-      (f₁ * x + f₂) + (g₁ * x + g₂)
-    ≡⟨⟩
-      (⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧) x
-    ∎
-    where
-      open ≡-Reasoning
+Now we can use law transfer to show that AF is a monoid without proving it is explicitly.
 
 ```
+  module _ where
+    open import MonoidLawTransfer
+    open import Relation.Binary.PropositionalEquality using (_≗_; module ≡-Reasoning; cong; sym)
+    affineFunction-Monoid : Monoid (ℚ → ℚ)
+    affineFunction-Monoid = record { _∙_ = _⊹_ ; ε = const0ℚ }
+
+    af-monoid : Monoid (ℚ × ℚ)
+    af-monoid = record { _∙_ = _⊕_ ; ε = 0ℚ , 0ℚ }
+
+    mh : MonoidHomomorphism ⟦_⟧ _≗_ af-monoid affineFunction-Monoid
+    mh = record { ε-homo = ε-homo ; homo = homo }
+      where
+        ε-homo : ⟦ AFIsMonoid.ε ⟧ ≗ AffineFunctionMonoid.ε
+        ε-homo x =
+          begin
+            ⟦ 0ℚ , 0ℚ ⟧ x
+          ≡⟨⟩
+            0ℚ * x + 0ℚ
+          ≡⟨ cong (λ □ → □ + 0ℚ) (*-zeroˡ x)  ⟩
+            0ℚ + 0ℚ
+          ≡⟨⟩
+            const0ℚ x
+          ∎
+          where
+            open ≡-Reasoning
+
+        homo : ∀ f g → ⟦ f AFIsMonoid.∙ g ⟧ ≗ ⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧
+        homo f@(f₁ , f₂) g@(g₁ , g₂) x =
+          begin
+            ⟦ f AFIsMonoid.∙ g ⟧ x
+          ≡⟨⟩
+            (f₁ + g₁) * x + (f₂ + g₂)
+          ≡⟨ cong (λ □ → □ + (f₂ + g₂)) (*-distribʳ-+ x f₁ g₁) ⟩
+            (f₁ * x + g₁ * x) + (f₂ + g₂)
+          ≡⟨ +-assoc (f₁ * x) (g₁ * x) (f₂ + g₂) ⟩
+            f₁ * x + (g₁ * x + (f₂ + g₂))
+          ≡⟨ cong (λ □ → f₁ * x + □) (+-comm (g₁ * x ) (f₂ + g₂)) ⟩
+            f₁ * x + ((f₂ + g₂) + g₁ * x)
+          ≡⟨ cong (λ □ → f₁ * x + □) (+-assoc f₂ g₂ (g₁ * x)) ⟩
+            f₁ * x + (f₂ + (g₂ + g₁ * x))
+          ≡⟨ cong (λ □ → f₁ * x + (f₂ + □)) (+-comm g₂ (g₁ * x)) ⟩
+            f₁ * x + (f₂ + (g₁ * x + g₂))
+          ≡⟨ sym (+-assoc (f₁ * x) f₂ (g₁ * x + g₂)) ⟩
+            (f₁ * x + f₂) + (g₁ * x + g₂)
+          ≡⟨⟩
+            (⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧) x
+          ∎
+          where
+            open ≡-Reasoning
+
+    open import Algebra.Structures using (IsMonoid)
+
+    _≈_ : (ℚ × ℚ) → (ℚ × ℚ) → Set
+    a ≈ b = ⟦ a ⟧ ≗ ⟦ b ⟧
+
+    af-isMonoid : IsMonoid _≈_ _⊕_ (0ℚ , 0ℚ)
+    af-isMonoid = MonoidHomomorphism.is-monoid-via-homomorphism mh AffineFunctionMonoid.isMonoid
+```
+
+
+
+--------------
+
+
+
+
+
+
+
+
+
+## Deriving `_⊕_` from meaning function and `_⊹_`
+
+I just realised it should be possible to derive `_⊕_` from `_⊹_`.
+
+Specification:
+
+```Plain
+⟦ f ⊕ g ⟧ ≡ ⟦ f ⟧ ⊹ ⟦ g ⟧
+```
+
+Reasoning
+
+```Plain
+⟦ (f₁ , f₂) ⊕ (g₁ , g₂) ⟧ ≡ λ x → ⟦ (f₁ , f₂) ⟧ x + ⟦ (g₁ , g₂) ⟧ x
+                          ≡ λ x → (f₁ * x + f₂) + (g₁ * x + g₂)
+                          ≡ λ x → (f₁ + g₁) * x + (g₁ + g₂)
+                          ≡ ⟦ (f₁ + g₁ , f₂ + g₂) ⟧
+```
+
+Thus:
+
+```Plain
+(f₁ , f₂) ⊕ (g₁ , g₂) = (f₁ + g₁ , f₂ + g₂)
+```
+
+-----
+
 
 
 
