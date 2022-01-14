@@ -537,48 +537,6 @@ the appropriate homomorphism! See module
     af-isMonoid = MonoidHomomorphism.is-monoid-via-homomorphism monoid-homo AffineFunctionMonoid.isMonoid
 ```
 
-
-
---------------
-
-
-
-
-
-
-
-
-
-## Deriving `_⊕_` from meaning function and `_⊹_`
-
-I just realised it should be possible to derive `_⊕_` from `_⊹_`.
-
-Specification:
-
-```Plain
-⟦ f ⊕ g ⟧ ≡ ⟦ f ⟧ ⊹ ⟦ g ⟧
-```
-
-Reasoning
-
-```Plain
-⟦ (f₁ , f₂) ⊕ (g₁ , g₂) ⟧ ≡ λ x → ⟦ (f₁ , f₂) ⟧ x + ⟦ (g₁ , g₂) ⟧ x
-                          ≡ λ x → (f₁ * x + f₂) + (g₁ * x + g₂)
-                          ≡ λ x → (f₁ + g₁) * x + (g₁ + g₂)
-                          ≡ ⟦ (f₁ + g₁ , f₂ + g₂) ⟧
-```
-
-Thus:
-
-```Plain
-(f₁ , f₂) ⊕ (g₁ , g₂) = (f₁ + g₁ , f₂ + g₂)
-```
-
------
-
-
-
-
 ## An API for affine transformations
 
 The Wikipedia page on _Affine Transformations_ has this to say:
