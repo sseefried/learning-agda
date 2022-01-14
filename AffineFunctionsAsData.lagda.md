@@ -358,49 +358,22 @@ The monoidal operation will be `_⊹_` and we define `const0ℚ` as our identity
           ∎
 ```
 
-Now that we have shown that the denotation is a monoid let's prove
-that the representation is also a monoid.
+It turns out that we don't have to explicitly prove that `AF` is a monoid. We can _transfer_ the laws
+from the denotation to the representation. We do this by showing that `⟦_⟧` is a monoid homomorphism
+with the equivalence relation on `AF` defined as follows.
 
-```
-  module AFIsMonoid where
-    open import Relation.Binary.PropositionalEquality
-    open import Algebra.Definitions {A = AF} _≡_
-    open import Algebra.Structures {A = AF} _≡_
-
-    _∙_ : AF → AF → AF
-    _∙_ = _⊕_
-
-    ε : AF
-    ε = 0ℚ , 0ℚ
-
-    isMonoid : IsMonoid _∙_ ε
-    isMonoid =
-        record
-          { isSemigroup = isSemigroup
-          ; identity    = identityˡ , identityʳ
-          }
-      where
-        open ≡-Reasoning
-
-        assoc : ∀ f g h → (f ∙ g) ∙ h ≡ f ∙ (g ∙ h)
-        assoc f@(f₁ , f₂) g@(g₁ , g₂) h@(h₁ , h₂) =
-          cong₂ _,_ (+-assoc f₁ g₁ h₁) (+-assoc f₂ g₂ h₂)
-
-        isSemigroup : IsSemigroup _∙_
-        isSemigroup =
-          record
-            { isMagma = isMagma _∙_
-            ; assoc   = assoc
-            }
-
-        identityˡ : ∀ f → ε ∙ f ≡ f
-        identityˡ f@(f₁ , f₂) = cong₂ _,_ (+-identityˡ f₁) (+-identityˡ f₂)
-
-        identityʳ : ∀ f → f ∙ ε ≡ f
-        identityʳ f@(f₁ , f₂) = cong₂ _,_ (+-identityʳ f₁) (+-identityʳ f₂)
+```plain
+_≈_ : (ℚ x ℚ) → (ℚ × ℚ) → Set
+f ≈ g = ⟦ f ⟧ ≗ ⟦ g ⟧
 ```
 
-Now we can use law transfer to show that AF is a monoid without proving it is explicitly.
+This is necessary for the laws to transfer across from the denotation.
+In general the equivalence relation of the _representation_ monoid
+must be defined in terms of the equivalence relation on the
+_denotation_ monoid. Even more generally, _any_ mathematical structure
+that holds on the denotation will transfer to the representation given
+the appropriate homomorphism! See module
+[MonoidLawTransfer](./MonoidLawTransfer.agda) for more details.
 
 ```
   module _ where
@@ -412,10 +385,17 @@ Now we can use law transfer to show that AF is a monoid without proving it is ex
     af-monoid : Monoid (ℚ × ℚ)
     af-monoid = record { _∙_ = _⊕_ ; ε = 0ℚ , 0ℚ }
 
-    mh : MonoidHomomorphism ⟦_⟧ _≗_ af-monoid affineFunction-Monoid
-    mh = record { ε-homo = ε-homo ; homo = homo }
+    instance
+      _ : Monoid (ℚ → ℚ)
+      _ = affineFunction-Monoid
+
+      _ : Monoid (ℚ × ℚ)
+      _ = af-monoid
+
+    monoid-homo : MonoidHomomorphism ⟦_⟧ _≗_ af-monoid affineFunction-Monoid
+    monoid-homo = record { ε-homo = ε-homo ; homo = homo }
       where
-        ε-homo : ⟦ AFIsMonoid.ε ⟧ ≗ AffineFunctionMonoid.ε
+        ε-homo : ⟦ ε ⟧ ≗ ε
         ε-homo x =
           begin
             ⟦ 0ℚ , 0ℚ ⟧ x
@@ -429,10 +409,10 @@ Now we can use law transfer to show that AF is a monoid without proving it is ex
           where
             open ≡-Reasoning
 
-        homo : ∀ f g → ⟦ f AFIsMonoid.∙ g ⟧ ≗ ⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧
+        homo : ∀ f g → ⟦ f ∙ g ⟧ ≗ ⟦ f ⟧ ∙ ⟦ g ⟧
         homo f@(f₁ , f₂) g@(g₁ , g₂) x =
           begin
-            ⟦ f AFIsMonoid.∙ g ⟧ x
+            ⟦ f ∙ g ⟧ x
           ≡⟨⟩
             (f₁ + g₁) * x + (f₂ + g₂)
           ≡⟨ cong (λ □ → □ + (f₂ + g₂)) (*-distribʳ-+ x f₁ g₁) ⟩
@@ -448,7 +428,7 @@ Now we can use law transfer to show that AF is a monoid without proving it is ex
           ≡⟨ sym (+-assoc (f₁ * x) f₂ (g₁ * x + g₂)) ⟩
             (f₁ * x + f₂) + (g₁ * x + g₂)
           ≡⟨⟩
-            (⟦ f ⟧ AffineFunctionMonoid.∙ ⟦ g ⟧) x
+            (⟦ f ⟧ ∙ ⟦ g ⟧) x
           ∎
           where
             open ≡-Reasoning
@@ -459,7 +439,7 @@ Now we can use law transfer to show that AF is a monoid without proving it is ex
     a ≈ b = ⟦ a ⟧ ≗ ⟦ b ⟧
 
     af-isMonoid : IsMonoid _≈_ _⊕_ (0ℚ , 0ℚ)
-    af-isMonoid = MonoidHomomorphism.is-monoid-via-homomorphism mh AffineFunctionMonoid.isMonoid
+    af-isMonoid = MonoidHomomorphism.is-monoid-via-homomorphism monoid-homo AffineFunctionMonoid.isMonoid
 ```
 
 
