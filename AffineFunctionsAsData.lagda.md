@@ -50,47 +50,143 @@ AF : Set
 AF = ℚ × ℚ
 ```
 
-Now let's look at how we might add them. Let's consult the denotation.
-
-    f(x) = ax + b
-    g(x) = cx + d
-
-then
-
-    f(x) + g(x) = (ax + b) + (cx + d) = (a + c)x + (b + d)
-
-```
-_⊕_ : AF → AF → AF
-(a , b) ⊕ (c , d) = (a + c , b + d)
-```
-
-Now let's tackle function composition. Taking the same definition of
-`f(x)` and `g(x)` as before we can now look at what `f ∘ g` is:
-
-   (f ∘ g)(x) = f(g(x)) = f(cx + d) = a(cx + d) + b = acx + ad + b = acx + (ad + b)
-
-```
-_∘_ : AF → AF → AF
-(a , b) ∘ (c , d) = (a * c , a * d + b)
-```
-
-The meaning function is easy to define.
+First, let's define the meaning function
 
 ```
 ⟦_⟧ : AF → (ℚ → ℚ)
 ⟦ (a , b) ⟧ = λ x → a * x + b
 ```
 
-## An API for monoids: attempt 1
-
-Affine functions clearly form a monoid with the identity element being the function `f(x) = 0` and the binary operation of addition. Let's quickly prove that.
-
-But first, let's define what it means to add two functions.
+Also we define what it means to add two functions along with
+an identity element for this addition operation.
 
 ```
 _⊹_ : Op₂ (ℚ → ℚ)
 (f ⊹ g) x = f x + g x
+
+const0ℚ : ℚ → ℚ
+const0ℚ = λ _ → 0ℚ
 ```
+
+Affine functions form a monoid under `_⊹_` and `const0ℚ` which we will
+prove later.
+
+We now want to derive an addition operation `_⊕_` and an identity
+element `0AF` such that `⟦_⟧` is a monoid homomorphism on these two
+operations. This is a key principle of _denotational design_.
+
+We want the user of the representation to be able to reason about it
+_as if it were the denotation_. A completely equivalent way to say this is that
+the representation should be homomorphic with the denotation.
+
+We will now use Agda in order to derive an addition function, `_⊕_`
+for our representation.  This might seem a little strange since we
+don't know exactly what we are going to derive. I start the proof in
+Agda like this, with the following holes.
+
+```plain
+⊕-derivation : {f g : ℚ × ℚ}
+             → (_⊕_ : Op₂ (ℚ × ℚ))
+             → ⟦ f ⊕ g ⟧ ≗ ⟦ f ⟧ ⊹ ⟦ g ⟧
+             → ⟦ f ⊕ g ⟧ ≗ ⟦ { } ⟧
+⊕-derivation {f@(f₁ , f₂)} {g@(g₁ , g₂)} _⊕_ monoid-homo x =
+    begin
+      ⟦ f ⊕ g ⟧ x
+    ≡⟨ { } ⟩
+      ⟦ { }  ⟧ x
+    ∎
+```
+
+Note that the derivation takes a `_⊕_` argument representing the
+unknown function that we are deriving, and also the monoid
+homomorphism property we want to hold.
+
+I then perform equational reasoning hoping that I will end up with something
+reasonable at the end. This is what I got:
+
+```
+module _ where
+  open import Relation.Binary.PropositionalEquality
+
+  ⊕-derivation : {f@(f₁ , f₂) g@(g₁ , g₂) : ℚ × ℚ}
+               → (_⊕_ : Op₂ (ℚ × ℚ))
+               → (∀ f g → ⟦ f ⊕ g ⟧ ≗ ⟦ f ⟧ ⊹ ⟦ g ⟧)
+               → ⟦ f ⊕ g ⟧ ≗ ⟦ (f₁ + g₁) , (f₂ + g₂) ⟧
+  ⊕-derivation {f@(f₁ , f₂)} {g@(g₁ , g₂)} _⊕_ monoid-homo x =
+      begin
+        ⟦ f ⊕ g ⟧ x
+      ≡⟨ monoid-homo f g x ⟩
+        (⟦ f ⟧ ⊹ ⟦ g ⟧) x
+      ≡⟨⟩
+        ((λ x → f₁ * x + f₂) ⊹ (λ x → g₁ * x + g₂)) x
+      ≡⟨⟩
+        (f₁ * x + f₂) + (g₁ * x + g₂)
+      ≡⟨ +-assoc (f₁ * x) f₂ (g₁ * x + g₂) ⟩
+        (f₁ * x + (f₂ + (g₁ * x + g₂)))
+      ≡⟨ cong (λ □ → f₁ * x + □) (+-comm f₂ (g₁ * x + g₂)) ⟩
+        (f₁ * x + ((g₁ * x + g₂) + f₂))
+      ≡⟨ cong (λ □ → f₁ * x + □) (+-assoc (g₁ * x) g₂ f₂) ⟩
+        (f₁ * x + ((g₁ * x) + (g₂ + f₂)))
+      ≡⟨ cong (λ □ → f₁ * x + ((g₁ * x) + □)) (+-comm g₂ f₂ )  ⟩
+        (f₁ * x + ((g₁ * x) + (f₂ + g₂)))
+      ≡⟨ sym (+-assoc (f₁ * x) (g₁ * x) (f₂ + g₂)) ⟩
+        (f₁ * x + g₁ * x) + (f₂ + g₂)
+      ≡⟨ cong (λ □ → □ + (f₂ + g₂)) (sym (*-distribʳ-+ x f₁ g₁))  ⟩
+        (f₁ + g₁) * x + (f₂ + g₂)
+      ≡⟨⟩
+        (λ x → (f₁ + g₁) * x + (f₂ + g₂)) x
+      ≡⟨⟩
+        ⟦ (f₁ + g₁) , (f₂ + g₂) ⟧ x
+      ∎
+    where
+      open ≡-Reasoning
+```
+
+So a _sufficient_ definition is as follows
+
+```
+_⊕_ : AF → AF → AF
+(a , b) ⊕ (c , d) = (a + c , b + d)
+```
+
+```
+module _ where
+  open import Relation.Binary.PropositionalEquality
+
+  0AF-derivation : {0AF f : ℚ × ℚ}
+               → (_⊕_ : Op₂ (ℚ × ℚ))
+               → ⟦ 0AF ⟧ ≗ const0ℚ
+               → ⟦ 0AF ⟧ ≗ ⟦ 0ℚ , 0ℚ ⟧
+  0AF-derivation {0AF} {f@(f₁ , f₂)} _⊕_ monoid-ε-homo x =
+      begin
+        ⟦ 0AF ⟧ x
+      ≡⟨ monoid-ε-homo x ⟩
+        const0ℚ x
+      ≡⟨⟩
+        0ℚ
+      ≡⟨ sym (*-zeroˡ x) ⟩
+        0ℚ * x
+      ≡⟨ sym (+-identityʳ (0ℚ * x)) ⟩
+        0ℚ * x + 0ℚ
+      ≡⟨⟩
+        (λ x → 0ℚ * x + 0ℚ) x
+      ≡⟨⟩
+        ⟦ 0ℚ , 0ℚ ⟧ x
+      ∎
+    where
+      open ≡-Reasoning
+```
+
+Thus a sufficient definition is:
+
+```
+0AF : ℚ × ℚ
+0AF = 0ℚ , 0ℚ
+```
+
+## An API for monoids: attempt 1
+
+Affine functions clearly form a monoid with the identity element being the function `f(x) = 0` and the binary operation of addition. Let's quickly prove that.
 
 We can now beging our attempt in earnest.
 
@@ -261,12 +357,11 @@ module Attempt2 where
 ```
 
 Our equivalence relation will just be _extensional equality_ on functions.
-The monoidal operation will be `_⊹_` and we define `const0ℚ` as our identity element.
+The monoidal operation will be `_⊹_` and `const0ℚ` as our identity element.
 
 
 ```
-  const0ℚ : ℚ → ℚ
-  const0ℚ = λ _ → 0ℚ
+
 
   module AffineFunctionMonoid where
     _∙_ : (ℚ → ℚ) → (ℚ → ℚ) → (ℚ → ℚ)
