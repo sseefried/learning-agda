@@ -191,6 +191,9 @@ Affine functions clearly form a monoid with the identity element being the funct
 We can now beging our attempt in earnest.
 
 ```
+ℚ[_] : ℕ → ℚ
+ℚ[ x ] = mkℚ+ x 1 (CP.sym (CP.1-coprimeTo x))
+
 module Attempt1 where
   open import Relation.Binary.PropositionalEquality
 
@@ -200,10 +203,6 @@ module Attempt1 where
 
   Let's prove this for a basic affine function
 
-  ```
-  ℚ[_] : ℕ → ℚ
-  ℚ[ x ] = mkℚ+ x 1 (CP.sym (CP.1-coprimeTo x))
-  ```
 
   ```
   10x+3 : ℚ → ℚ
@@ -537,9 +536,206 @@ the appropriate homomorphism! See module
     af-isMonoid = MonoidHomomorphism.is-monoid-via-homomorphism monoid-homo AffineFunctionMonoid.isMonoid
 ```
 
+## An API for composition
+
+```
+module _ where
+  open import Relation.Binary.PropositionalEquality
+  open import Function using (_∘_)
+
+  ○-derivation : {f@(f₁ , f₂) g@(g₁ , g₂) : ℚ × ℚ}
+               → ⟦ f ⟧ ∘ ⟦ g ⟧ ≗ ⟦ (f₁ * g₁ , f₁ * g₂ + f₂) ⟧
+  ○-derivation {f@(f₁ , f₂)} {g@(g₁ , g₂)} x =
+      begin
+        (⟦ f ⟧ ∘ ⟦ g ⟧) x
+      ≡⟨⟩
+        ((λ x → f₁ * x + f₂) ∘ (λ x → g₁ * x + g₂)) x
+      ≡⟨⟩
+        ((λ x → f₁ * (g₁ * x + g₂) + f₂)) x
+      ≡⟨⟩
+        f₁ * (g₁ * x + g₂) + f₂
+      ≡⟨ cong (λ □ → □ + f₂) (*-distribˡ-+ f₁ (g₁ * x) g₂)  ⟩
+        (f₁ * (g₁ * x)) + (f₁ * g₂) + f₂
+      ≡⟨ cong (λ □ → □ + (f₁ * g₂) + f₂) (sym (*-assoc f₁ g₁ x ))  ⟩
+        (f₁ * g₁ * x) + (f₁ * g₂) + f₂
+      ≡⟨ +-assoc (f₁ * g₁ * x) (f₁ * g₂) f₂  ⟩
+        (f₁ * g₁ * x) + (f₁ * g₂ + f₂)
+      ≡⟨⟩
+        ⟦ (f₁ * g₁ , f₁ * g₂ + f₂) ⟧ x
+      ∎
+    where
+      open ≡-Reasoning
+
+```
+
+A sufficient definition is:
+
+```
+_○_ : (ℚ × ℚ) → (ℚ × ℚ) → (ℚ × ℚ)
+(f₁ , f₂) ○ (g₁ , g₂) = (f₁ * g₁ , f₁ * g₂ + f₂)
+```
+
+Now for `id`
+
+```
+module _ where
+  open import Relation.Binary.PropositionalEquality
+  open import Function using (_∘_)
+
+  i₁ i₂ : ℚ
+  i₁ =  ℚ[ 1 ]
+  i₂ =  0ℚ
+
+  id-derivation : ∃[ id ] (⟦ id ⟧ ≗ (λ x → x))
+  id-derivation = ( (i₁ , i₂) , pf)
+    where
+      open ≡-Reasoning
+      pf : (⟦ i₁ , i₂ ⟧ ≗ (λ x → x))
+      pf x =
+        begin
+          ⟦ i₁ , i₂ ⟧ x
+        ≡⟨⟩
+          i₁ * x + i₂
+        ≡⟨ cong (λ □ → □ + i₂) (*-identityˡ x) ⟩
+          x + i₂
+        ≡⟨ +-identityʳ x ⟩
+          x
+        ∎
+-- it's not clear what the process was taken to get to this proof
+```
+
+```
+id : ℚ × ℚ
+id = (ℚ[ 1 ] , 0ℚ)
+```
+
+```
+module _ where
+  open import Relation.Binary.PropositionalEquality
+
+  -- linear takes an affine function and returns a linear one
+  toLinear : (ℚ → ℚ) → (ℚ → ℚ)
+  toLinear f = λ x → f x - f 0ℚ
+
+  -- linear functions have following property
+
+  isLinear : (ℚ → ℚ) → Set
+  isLinear f = isLinear₁ × isLinear₂
+    where
+      isLinear₁ = ∀ a x → f (a * x) ≡ a * f x
+      isLinear₂ = ∀ x y → f (x + y) ≡ f x + f y
+```
+```
+  linearity : ∀ (f : ℚ → ℚ) → (∀ a x → f (a * x) ≡ a * f x) → {!!} ≡ {!!}  --  ≗ λ x → f 1ℚ * x
+  linearity f eq =
+      begin
+        {!eq !}
+      ≡⟨ {!!} ⟩
+        {!!}
+      ∎
+    where
+      open ≡-Reasoning
+      p1 : ∀ a → f a ≡ a * f 1ℚ
+      p1 a =
+        begin
+          f a
+        ≡⟨ cong (λ □ → f □) (sym (*-identityʳ a)) ⟩
+          f (a * 1ℚ)
+        ≡⟨ eq a 1ℚ ⟩
+          a * f 1ℚ
+        ∎
+
+  -- ⇔
+
+  sub₁ : (a b c : ℚ) → (a + b ≡ c) →  (a ≡ c - b)
+  sub₁ a b c  = {!!}
+
+  sub₂ : (a b c : ℚ) → (a ≡ c - b) → (a + b ≡ c)
+  sub₂ a b c  = {!!}
+
+  congy : ∀ {a} {A B : Set a} (f : A → B) {x y} → (x ≡ y) ≡ (f x ≡ f y)
+  congy = {!!}
+
+
+  open import Relation.Binary.Definitions
+  _ : Set
+  _ = {! Substitutive _≡_!}
+
+--  open import Relation.Binary.Core
+--  subx : (a b c : ℚ) → (a + b ≡ c) ⇔ (a ≡ c - b)
+--  subx a b c = {!!}
+
+  sub : (a b c : ℚ) → (a + b ≡ c) ≡ (a ≡ c - b)
+  sub a b c = {!!}
+{-      begin
+        a
+      ≡⟨ sym (+-identityʳ a) ⟩
+        a + 0ℚ
+      ≡⟨ cong (λ □ → a + □) (sym (+-inverseʳ b))  ⟩
+        a + (b - b)
+      ≡⟨ sym (+-assoc a  b (- b)) ⟩
+        (a + b) - b
+      ≡⟨ cong (λ □ → □ - b) eq ⟩
+        c - b
+      ∎
+    where
+      open ≡-Reasoning -}
+```
+
+
+
+Does anyone know how to do something like this?
+
+
+```
+  foo : (a b c d : ℚ) → (a + b ≡ c + d) ≡ {!!}
+  foo a b c d =
+      begin
+        (a + b ≡ c + d)
+      ≡⟨ sub a b (c + d) ⟩
+        a ≡ c + d - b
+      ≡⟨ {!!} ⟩
+        {!!}
+      ∎
+    where open ≡-Reasoning
+
+
+
+
+```
+
+
+## Derivation of affinity
+
+```
+  pf : ∀ f a x → (f (a * x) - f 0ℚ ≡ a * (f x - f 0ℚ)) → f ≗ λ x → (f 1ℚ - f 0ℚ) * x + f 0ℚ
+  pf f a x eq = {!!}
+
+    where
+      open ≡-Reasoning
+```
+
+
+
+
+
+
+
+
+
+
+
 ## An API for affine transformations
 
 The Wikipedia page on _Affine Transformations_ has this to say:
 
 > The functions `f : ℚ → ℚ , f(x) = mx + c` with `m` and `c` in `ℚ`,
 > are precisely the affine transformations of the real line.
+
+The affine transformations are
+
+- translation
+- reflection
+- scaling
+- rotation
+- shearing
