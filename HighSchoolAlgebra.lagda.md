@@ -2,8 +2,6 @@
 
 <!--
 ```
-{-# OPTIONS --with-K #-}
-
 module HighSchoolAlgebra where
 
 open import Data.Rational
@@ -33,7 +31,7 @@ Here are some lemmas we're going to need. They're simply proofs that allow us
 to do things like "subtract from both sides" or "reassociate addition".
 
 ```
-open import Relation.Binary.PropositionalEquality
+open import Relation.Binary.PropositionalEquality hiding (setoid)
 
 subLHSʳ : (a b c : ℚ) → (a + b ≡ c) → (a ≡ c - b)
 subLHSʳ a b c eq =
@@ -97,3 +95,58 @@ module _ where
 ```
 
 ## Using logical equivalence and Setoid reasoning
+
+```
+module _ where
+  open import Function.Equivalence using (equivalence; ⇔-setoid; _⇔_)
+  open import Level
+
+  subLHSʳ′ : (a b c : ℚ) → (a ≡ c - b) → (a + b ≡ c)
+  subLHSʳ′ a b c eq =
+      begin
+        a + b         ≡⟨ cong (_+ b) eq  ⟩
+        (c - b) + b   ≡⟨ +-assoc c (- b) b  ⟩
+        c + (- b + b) ≡⟨ cong (c +_) (+-inverseˡ b)  ⟩
+        c + 0ℚ        ≡⟨ +-identityʳ c  ⟩
+        c             ∎
+    where
+      open ≡-Reasoning
+
+  subRHSˡ′ : (a b c : ℚ) → a - b ≡ c → a ≡ b + c
+  subRHSˡ′ a b c eq =
+      begin
+        a         ≡⟨ {!!} ⟩
+        b + c     ∎
+    where
+      open ≡-Reasoning
+
+  reassoc′ : (a b c d : ℚ) → a ≡ b + (c + d) → a ≡ b + c + d
+  reassoc′ a b c d eq =
+      begin
+        a         ≡⟨ {!!} ⟩
+        b + c + d ∎
+    where
+      open ≡-Reasoning
+
+  subLHSʳ⇔ : (a b c : ℚ) → (a + b ≡ c) ⇔ (a ≡ c - b)
+  subLHSʳ⇔ a b c  = equivalence (subLHSʳ a b c) (subLHSʳ′ a b c)
+
+  subRHSˡ⇔ : (a b c : ℚ) → a ≡ b + c ⇔ a - b ≡ c
+  subRHSˡ⇔ a b c = equivalence (subRHSˡ a b c) (subRHSˡ′ a b c)
+
+  reassoc⇔ : (a b c d : ℚ) → a ≡ b + c + d ⇔ a ≡ b + (c + d)
+  reassoc⇔ a b c d = equivalence (reassoc a b c d) (reassoc′ a b c d)
+
+  ex2 : (a b c d : ℚ) → a + b ≡ c + d ⇔ a - c ≡ d - b
+  ex2 a b c d =
+      begin
+        a + b ≡ c + d       ≈⟨ subLHSʳ⇔ a b (c + d) ⟩
+        a     ≡ c + d - b   ≈⟨ reassoc⇔ a c d (- b) ⟩
+        a     ≡ c + (d - b) ≈⟨ subRHSˡ⇔ a c (d - b) ⟩
+        a - c ≡ d - b
+      ∎
+    where
+      open import Relation.Binary.Reasoning.Setoid (⇔-setoid 0ℓ)
+
+
+```
