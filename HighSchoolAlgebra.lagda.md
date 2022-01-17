@@ -11,11 +11,26 @@ open import Data.Rational.Properties
 ```
 -->
 
+# How to do algebraic manipulations like I was taught in High School
+
+For a while I've wanted to manipulate equations just like I was taught
+in high school. For instance, given the equation `a + b ≡ c + d` I'd like to be able to
+do something like
+
+```plain
+  a + b ≡ c + d
+  a     ≡ c + d - b        -- subtract b from both sides
+  a - c ≡ d - b            -- subtract c from both sides
+```
+
+I now know how to do this is in Agda and with some help from Matthew
+Daggitt on the Agda Zulip and a private discussion with Conal Elliott.
+
+
 ## Preamble
 
-We're going to show how to transform `a + b ≡ c + d` into `a - c ≡ d - b`.
-
-Here are some lemmas we're going to need
+Here are some lemmas we're going to need. They're simply proofs that allow us
+to do things like "subtract from both sides" or "reassociate addition".
 
 ```
 open import Relation.Binary.PropositionalEquality
@@ -23,53 +38,48 @@ open import Relation.Binary.PropositionalEquality
 subLHSʳ : (a b c : ℚ) → (a + b ≡ c) → (a ≡ c - b)
 subLHSʳ a b c eq =
       begin
-        a
-      ≡⟨ sym (+-identityʳ a) ⟩
-        a + 0ℚ
-      ≡⟨ cong (λ □ → a + □) (sym (+-inverseʳ b))  ⟩
-        a + (b - b)
-      ≡⟨ sym (+-assoc a  b (- b)) ⟩
-        (a + b) - b
-      ≡⟨ cong (λ □ → □ - b) eq ⟩
-        c - b
-      ∎
+        a             ≡⟨ sym (+-identityʳ a) ⟩
+        a + 0ℚ        ≡⟨ cong (λ □ → a + □) (sym (+-inverseʳ b))  ⟩
+        a + (b - b)   ≡⟨ sym (+-assoc a  b (- b)) ⟩
+        (a + b) - b   ≡⟨ cong (λ □ → □ - b) eq ⟩
+        c - b         ∎
     where
       open ≡-Reasoning
 
 subRHSˡ : (a b c : ℚ) → a ≡ b + c → a - b ≡ c
 subRHSˡ a b c eq =
       begin
-        a - b
-      ≡⟨ cong (_- b) eq ⟩
-        b + c - b
-      ≡⟨ cong (_- b) (+-comm b c) ⟩
-        c + b - b
-      ≡⟨ +-assoc c b (- b) ⟩
-        c + (b - b)
-      ≡⟨ cong (c +_) (+-inverseʳ b)  ⟩
-        c + 0ℚ
-      ≡⟨ +-identityʳ c ⟩
-        c
-      ∎
+        a - b        ≡⟨ cong (_- b) eq ⟩
+        b + c - b    ≡⟨ cong (_- b) (+-comm b c) ⟩
+        c + b - b    ≡⟨ +-assoc c b (- b) ⟩
+        c + (b - b)  ≡⟨ cong (c +_) (+-inverseʳ b)  ⟩
+        c + 0ℚ       ≡⟨ +-identityʳ c ⟩
+        c            ∎
     where
       open ≡-Reasoning
 
 reassoc : (a b c d : ℚ) → a ≡ b + c + d → a ≡ b + (c + d)
 reassoc a b c d eq =
       begin
-        a
-      ≡⟨ eq ⟩
-        b + c + d
-      ≡⟨ +-assoc b c d ⟩
-        b + (c + d)
-      ∎
+        a            ≡⟨ eq ⟩
+        b + c + d    ≡⟨ +-assoc b c d ⟩
+        b + (c + d)  ∎
     where
       open ≡-Reasoning
 ```
 
 ## Using `Function.Reasoning`
 
-Using this approach the equations sit on the right of `∶` syntax.
+I learned this technique from Matthew Daggitt on the Agda Zulip in
+this
+[post](https://agda.zulipchat.com/#narrow/stream/238741-general/topic/How.20to.20do.20high-school.20style.20algebraic.20reasoning.20on.20equations/near/268177299).
+
+Using this approach one can see the algebraic equations on the right
+of `∶` syntax, while the proofs which justify them appear on the left
+side.
+
+The algebraic equations, being type annotations, are actually
+optional. However, they should be included for clarity's sake.
 
 ```
 module _ where
@@ -85,3 +95,5 @@ module _ where
     |> subRHSˡ a c (d - b) ∶ a - c ≡  d - b
 
 ```
+
+## Using logical equivalence and Setoid reasoning
