@@ -75,6 +75,8 @@ We now want to derive an addition operation `_⊕_` and an identity
 element `0AF` such that `⟦_⟧` is a monoid homomorphism on these two
 operations. This is a key principle of _denotational design_.
 
+[TODO: This is wrong. Rewrite]
+
 We want the user of the representation to be able to reason about it
 _as if it were the denotation_. A completely equivalent way to say this is that
 the representation should be homomorphic with the denotation.
@@ -174,6 +176,8 @@ module 0AF-derivation where
           (λ x → 0ℚ + 0ℚ) x
         ≡⟨ cong (λ □ → (λ x → □) x) (+-identityʳ 0ℚ) ⟩
          (λ _ → 0ℚ) x
+        ≡⟨⟩
+          const0ℚ x
         ∎
     where
       open ≡-Reasoning
@@ -584,35 +588,40 @@ _○_ : (ℚ × ℚ) → (ℚ × ℚ) → (ℚ × ℚ)
 Now for `id`
 
 ```
-module _ where
+module id-derivation where
   open import Relation.Binary.PropositionalEquality
   open import Function using (_∘_)
 
-  i₁ i₂ : ℚ
-  i₁ =  ℚ[ 1 ]
-  i₂ =  0ℚ
+  id : AF
+  id = (1ℚ , 0ℚ)
 
-  id-derivation : ∃[ id ] (⟦ id ⟧ ≗ (λ x → x))
-  id-derivation = ( (i₁ , i₂) , pf)
+  id-derivation : ⟦ id ⟧ ≗ λ x → x
+  id-derivation x =
+      let (i₁ , i₂) = id
+      in
+         begin
+           ⟦ id ⟧ x
+         ≡⟨⟩
+           ⟦ (i₁ , i₂) ⟧ x
+         ≡⟨⟩
+           i₁ * x + i₂
+         ≡⟨⟩ -- meet in the middle
+           1ℚ * x + 0ℚ
+         ≡⟨ cong (λ □ → □ + 0ℚ) (*-identityˡ x) ⟩
+           x + 0ℚ
+         ≡⟨ +-identityʳ x ⟩
+           x
+         ≡⟨⟩
+           (λ x → x) x
+         ∎
     where
       open ≡-Reasoning
-      pf : (⟦ i₁ , i₂ ⟧ ≗ (λ x → x))
-      pf x =
-        begin
-          ⟦ i₁ , i₂ ⟧ x
-        ≡⟨⟩
-          i₁ * x + i₂
-        ≡⟨ cong (λ □ → □ + i₂) (*-identityˡ x) ⟩
-          x + i₂
-        ≡⟨ +-identityʳ x ⟩
-          x
-        ∎
--- it's not clear what the process was taken to get to this proof
+
 ```
 
 ```
 id : ℚ × ℚ
-id = (ℚ[ 1 ] , 0ℚ)
+id = (1ℚ , 0ℚ)
 ```
 
 ```
