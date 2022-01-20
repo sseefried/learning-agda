@@ -82,8 +82,10 @@ optional. However, they should be included for clarity's sake.
 ```
 module _ where
 
-  open import Function.Reasoning
 
+  open import Function using (flip)
+  open import Function.Reasoning
+  open import Level
 
   ex1 : (a b c d : ℚ) → a + b ≡ c + d → a - c ≡ d - b
   ex1 a b c d a+b≡c+d =
@@ -92,7 +94,22 @@ module _ where
     |> reassoc a c d (- b) ∶ a ≡ c + (d - b)
     |> subRHSˡ a c (d - b) ∶ a - c ≡  d - b
 
+  infixr 0 _∋_<|_
+  _∋_<|_ : ∀ {a b : Level} {A : Set a} (B : {A} → Set b) →
+            (∀ a → B {a}) → (a : A) →  B {a}
+  ty ∋ f <| a = _|>_ {B = λ a → ty {a}} a f
+
+  ex1′ : (a b c d : ℚ) → a + b ≡ c + d → a - c ≡ d - b
+  ex1′ a b c d a+b≡c+d =
+           a - c ≡ d - b   ∋ subRHSˡ a c (d - b)   <|
+           a ≡ c + (d - b) ∋ reassoc a c d (- b)   <|
+           a ≡ c + d - b   ∋ (subLHSʳ a b (c + d)) <|
+           a+b≡c+d
+
 ```
+
+
+
 
 ## Using logical equivalence and Setoid reasoning
 
