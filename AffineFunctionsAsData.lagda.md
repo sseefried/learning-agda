@@ -1,4 +1,4 @@
-<!-- -*-agda2-mode-*- -->
+<!-- -*-agda2-*- -->
 
 <!--
 ```
@@ -105,40 +105,40 @@ I then perform equational reasoning hoping that I will end up with something
 reasonable at the end. This is what I got:
 
 ```
-module _ where
+module ⊕-derivation where
   open import Relation.Binary.PropositionalEquality
 
-  ⊕-derivation : {f@(f₁ , f₂) g@(g₁ , g₂) : ℚ × ℚ}
-               → (_⊕_ : Op₂ (ℚ × ℚ))
-               → (∀ f g → ⟦ f ⊕ g ⟧ ≗ ⟦ f ⟧ ⊹ ⟦ g ⟧)
-               → ⟦ f ⊕ g ⟧ ≗ ⟦ (f₁ + g₁) , (f₂ + g₂) ⟧
-  ⊕-derivation {f@(f₁ , f₂)} {g@(g₁ , g₂)} _⊕_ monoid-homo x =
+  _⊕_ : AF → AF → AF
+  (f₁ , f₂) ⊕ (g₁ , g₂) = (f₁ + g₁ , f₂ + g₂)
+
+  ⊕-derivation : ∀ (f g : ℚ × ℚ) → ⟦ f ⊕ g ⟧ ≗ ⟦ f ⟧ ⊹ ⟦ g ⟧
+  ⊕-derivation f@(f₁ , f₂) g@(g₁ , g₂) x =
       begin
-        ⟦ f ⊕ g ⟧ x
-      ≡⟨ monoid-homo f g x ⟩
-        (⟦ f ⟧ ⊹ ⟦ g ⟧) x
+         ⟦ f ⊕ g ⟧ x
       ≡⟨⟩
-        ((λ x → f₁ * x + f₂) ⊹ (λ x → g₁ * x + g₂)) x
+         ⟦ (f₁ , f₂) ⊕ (g₁ , g₂) ⟧ x
       ≡⟨⟩
-        (f₁ * x + f₂) + (g₁ * x + g₂)
-      ≡⟨ +-assoc (f₁ * x) f₂ (g₁ * x + g₂) ⟩
-        (f₁ * x + (f₂ + (g₁ * x + g₂)))
-      ≡⟨ cong (λ □ → f₁ * x + □) (+-comm f₂ (g₁ * x + g₂)) ⟩
-        (f₁ * x + ((g₁ * x + g₂) + f₂))
-      ≡⟨ cong (λ □ → f₁ * x + □) (+-assoc (g₁ * x) g₂ f₂) ⟩
-        (f₁ * x + ((g₁ * x) + (g₂ + f₂)))
-      ≡⟨ cong (λ □ → f₁ * x + ((g₁ * x) + □)) (+-comm g₂ f₂ )  ⟩
-        (f₁ * x + ((g₁ * x) + (f₂ + g₂)))
-      ≡⟨ sym (+-assoc (f₁ * x) (g₁ * x) (f₂ + g₂)) ⟩
-        (f₁ * x + g₁ * x) + (f₂ + g₂)
-      ≡⟨ cong (λ □ → □ + (f₂ + g₂)) (sym (*-distribʳ-+ x f₁ g₁))  ⟩
+         ⟦ (f₁ + g₁ , f₂ + g₂) ⟧ x -- this is where the proof "met in the middle"  and provided the
+                                   -- definition
+      ≡⟨⟩
         (f₁ + g₁) * x + (f₂ + g₂)
+      ≡⟨ cong (λ □ → □ + (f₂ + g₂)) (*-distribʳ-+ x f₁ g₁) ⟩
+        (f₁ * x + g₁ * x) + (f₂ + g₂)
+      ≡⟨ +-assoc (f₁ * x) (g₁ * x) (f₂ + g₂) ⟩
+        f₁ * x + (g₁ * x + (f₂ + g₂))
+      ≡⟨ cong (λ □ → f₁ * x + □) (sym (+-assoc (g₁ * x) f₂ g₂)) ⟩
+        f₁ * x + ((g₁ * x + f₂) + g₂)
+      ≡⟨ cong (λ □ → f₁ * x + (□ + g₂)) (+-comm (g₁ * x) f₂) ⟩
+        f₁ * x + ((f₂ + g₁ * x) + g₂)
+      ≡⟨ cong (λ □ → f₁ * x + □) (+-assoc f₂ (g₁ * x) g₂) ⟩
+        f₁ * x + (f₂ + (g₁ * x + g₂))
+      ≡⟨ sym (+-assoc (f₁ * x) f₂ (g₁ * x + g₂)) ⟩
+        (f₁ * x + f₂) + (g₁ * x + g₂)
       ≡⟨⟩
-        (λ x → (f₁ + g₁) * x + (f₂ + g₂)) x
-      ≡⟨⟩
-        ⟦ (f₁ + g₁) , (f₂ + g₂) ⟧ x
+         (⟦ f ⟧ ⊹ ⟦ g ⟧) x
       ∎
     where
+
       open ≡-Reasoning
 ```
 
@@ -150,29 +150,31 @@ _⊕_ : AF → AF → AF
 ```
 
 ```
-module _ where
+module 0AF-derivation where
   open import Relation.Binary.PropositionalEquality
 
-  0AF-derivation : {0AF f : ℚ × ℚ}
-               → (_⊕_ : Op₂ (ℚ × ℚ))
-               → ⟦ 0AF ⟧ ≗ const0ℚ
-               → ⟦ 0AF ⟧ ≗ ⟦ 0ℚ , 0ℚ ⟧
-  0AF-derivation {0AF} {f@(f₁ , f₂)} _⊕_ monoid-ε-homo x =
-      begin
-        ⟦ 0AF ⟧ x
-      ≡⟨ monoid-ε-homo x ⟩
-        const0ℚ x
-      ≡⟨⟩
-        0ℚ
-      ≡⟨ sym (*-zeroˡ x) ⟩
-        0ℚ * x
-      ≡⟨ sym (+-identityʳ (0ℚ * x)) ⟩
-        0ℚ * x + 0ℚ
-      ≡⟨⟩
-        (λ x → 0ℚ * x + 0ℚ) x
-      ≡⟨⟩
-        ⟦ 0ℚ , 0ℚ ⟧ x
-      ∎
+  0AF : ℚ × ℚ
+  0AF = (0ℚ , 0ℚ)
+
+  0AF-derivation : ⟦ 0AF ⟧ ≗ const0ℚ
+  0AF-derivation x =
+      let (a , b) = 0AF
+      in
+        begin
+          ⟦ 0AF ⟧ x
+        ≡⟨⟩
+          ⟦ (a , b) ⟧ x
+        ≡⟨⟩
+          a * x + b
+        ≡⟨⟩ -- meet in the middle
+          0ℚ * x + 0ℚ
+        ≡⟨⟩
+          (λ x → 0ℚ * x + 0ℚ) x
+        ≡⟨ cong (λ □ → (λ x → □ + 0ℚ) x) (*-zeroˡ x) ⟩
+          (λ x → 0ℚ + 0ℚ) x
+        ≡⟨ cong (λ □ → (λ x → □) x) (+-identityʳ 0ℚ) ⟩
+         (λ _ → 0ℚ) x
+        ∎
     where
       open ≡-Reasoning
 ```
@@ -539,29 +541,33 @@ the appropriate homomorphism! See module
 ## An API for composition
 
 ```
-module _ where
+module ○-derivation where
   open import Relation.Binary.PropositionalEquality
   open import Function using (_∘_)
 
-  ○-derivation : {f@(f₁ , f₂) g@(g₁ , g₂) : ℚ × ℚ}
-               → ⟦ f ⟧ ∘ ⟦ g ⟧ ≗ ⟦ (f₁ * g₁ , f₁ * g₂ + f₂) ⟧
-  ○-derivation {f@(f₁ , f₂)} {g@(g₁ , g₂)} x =
+  _○_ : (ℚ × ℚ) → (ℚ × ℚ) → (ℚ × ℚ)
+  (f₁ , f₂) ○ (g₁ , g₂) = (f₁ * g₁ , f₁ * g₂ + f₂)
+
+  ○-derivation : ∀ f g → ⟦ f ○ g ⟧ ≗ ⟦ f ⟧ ∘ ⟦ g ⟧
+  ○-derivation f@(f₁ , f₂) g@(g₁ , g₂) x =
       begin
-        (⟦ f ⟧ ∘ ⟦ g ⟧) x
+        (⟦ f ○ g ⟧) x
+      ≡⟨⟩
+        (⟦ (f₁ , f₂) ○ (g₁ , g₂) ⟧) x
+      ≡⟨⟩ -- meet in the middle
+        ⟦ (f₁ * g₁ , f₁ * g₂ + f₂) ⟧ x
+      ≡⟨⟩
+        f₁ * g₁ * x + (f₁ * g₂ + f₂)
+      ≡⟨ sym (+-assoc (f₁ * g₁ * x) (f₁ * g₂) f₂) ⟩
+        f₁ * g₁ * x + f₁ * g₂ + f₂
+      ≡⟨ cong (λ □ → □ + f₁ * g₂ + f₂) (*-assoc f₁ g₁ x) ⟩
+        f₁ * (g₁ * x) + f₁ * g₂ + f₂
+      ≡⟨ cong (λ □ → □ + f₂) (sym (*-distribˡ-+ f₁ (g₁ * x) g₂)) ⟩
+        f₁ * (g₁ * x + g₂) + f₂
       ≡⟨⟩
         ((λ x → f₁ * x + f₂) ∘ (λ x → g₁ * x + g₂)) x
       ≡⟨⟩
-        ((λ x → f₁ * (g₁ * x + g₂) + f₂)) x
-      ≡⟨⟩
-        f₁ * (g₁ * x + g₂) + f₂
-      ≡⟨ cong (λ □ → □ + f₂) (*-distribˡ-+ f₁ (g₁ * x) g₂)  ⟩
-        (f₁ * (g₁ * x)) + (f₁ * g₂) + f₂
-      ≡⟨ cong (λ □ → □ + (f₁ * g₂) + f₂) (sym (*-assoc f₁ g₁ x ))  ⟩
-        (f₁ * g₁ * x) + (f₁ * g₂) + f₂
-      ≡⟨ +-assoc (f₁ * g₁ * x) (f₁ * g₂) f₂  ⟩
-        (f₁ * g₁ * x) + (f₁ * g₂ + f₂)
-      ≡⟨⟩
-        ⟦ (f₁ * g₁ , f₁ * g₂ + f₂) ⟧ x
+        (⟦ f ⟧ ∘ ⟦ g ⟧) x
       ∎
     where
       open ≡-Reasoning
@@ -644,64 +650,6 @@ module _ where
         ≡⟨ eq a 1ℚ ⟩
           a * f 1ℚ
         ∎
-
-  -- ⇔
-
-  sub₁ : (a b c : ℚ) → (a + b ≡ c) →  (a ≡ c - b)
-  sub₁ a b c  = {!!}
-
-  sub₂ : (a b c : ℚ) → (a ≡ c - b) → (a + b ≡ c)
-  sub₂ a b c  = {!!}
-
-  congy : ∀ {a} {A B : Set a} (f : A → B) {x y} → (x ≡ y) ≡ (f x ≡ f y)
-  congy = {!!}
-
-
-  open import Relation.Binary.Definitions
-  _ : Set
-  _ = {! Substitutive _≡_!}
-
---  open import Relation.Binary.Core
---  subx : (a b c : ℚ) → (a + b ≡ c) ⇔ (a ≡ c - b)
---  subx a b c = {!!}
-
-  sub : (a b c : ℚ) → (a + b ≡ c) ≡ (a ≡ c - b)
-  sub a b c = {!!}
-{-      begin
-        a
-      ≡⟨ sym (+-identityʳ a) ⟩
-        a + 0ℚ
-      ≡⟨ cong (λ □ → a + □) (sym (+-inverseʳ b))  ⟩
-        a + (b - b)
-      ≡⟨ sym (+-assoc a  b (- b)) ⟩
-        (a + b) - b
-      ≡⟨ cong (λ □ → □ - b) eq ⟩
-        c - b
-      ∎
-    where
-      open ≡-Reasoning -}
-```
-
-
-
-Does anyone know how to do something like this?
-
-
-```
-  foo : (a b c d : ℚ) → (a + b ≡ c + d) ≡ {!!}
-  foo a b c d =
-      begin
-        (a + b ≡ c + d)
-      ≡⟨ sub a b (c + d) ⟩
-        a ≡ c + d - b
-      ≡⟨ {!!} ⟩
-        {!!}
-      ∎
-    where open ≡-Reasoning
-
-
-
-
 ```
 
 
