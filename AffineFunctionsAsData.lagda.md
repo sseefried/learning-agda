@@ -673,7 +673,16 @@ module _ where
 ```
 
 
+## Two monoids on the same data structure
 
+It's well known that "a monoid is a category of one object" so AF is also a monoid
+under composition and the identity function.
+
+
+   ((f₁ , f₂) ∘ (g₁ , g₂)) ∘ (h₁ , h₂)
+≡ (f₁ * g₁ , f₁ * g₂ + f₂) ∘ (h₁ , h₂)
+≡ (f₁ * g₁ * h₁ , (f₁ * g₂ + f₂) * h₁ + h₂)
+≡
 
 
 
