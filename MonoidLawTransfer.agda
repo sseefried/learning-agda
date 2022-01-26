@@ -13,20 +13,20 @@ private
 
 open import Algebra.Core using (Op₂)
 
-record Monoid (A : Set) : Set₁ where
+record RawMonoid (A : Set) : Set₁ where
    infixr 29 _∙_
    field
       _∙_ : Op₂ A
       ε   : A
 
-open Monoid ⦃ … ⦄ public
+open RawMonoid ⦃ … ⦄ public
 
 record MonoidHomomorphism (⟦_⟧ : A → B) (_≈₂_ : B → B → Set)
-                          (monoidA : Monoid A) (monoidB : Monoid B) : Set where
+                          (monoidA : RawMonoid A) (monoidB : RawMonoid B) : Set where
   instance
-    _ : Monoid A
+    _ : RawMonoid A
     _ = monoidA
-    _ : Monoid B
+    _ : RawMonoid B
     _ = monoidB
 
   field
