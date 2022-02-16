@@ -19,12 +19,13 @@ open import Data.Product hiding (swap)
 open import Data.Sum
 open import Data.Sum.Properties
 open import Function
+open import Function.Bundles
 
 splitPermute : (m : ℕ) {n : ℕ} → (𝔽 (m ℕ.+ n) → 𝔽 (n ℕ.+ m))
 splitPermute m {n} = join n m ∘ swap ∘ splitAt m
 
-left-inverse : {m n : ℕ} (x : 𝔽 (m ℕ.+ n)) → (splitPermute n ∘ splitPermute m) x ≡ x
-left-inverse {m} {n} x =
+inverse : {m n : ℕ} (x : 𝔽 (m ℕ.+ n)) → (splitPermute n ∘ splitPermute m) x ≡ x
+inverse {m} {n} x =
   begin
     (splitPermute n ∘ splitPermute m) x                                ≡⟨⟩
     ((join m n ∘ swap ∘ splitAt n) ∘ (join n m ∘ swap ∘ splitAt m)) x  ≡⟨⟩
@@ -36,4 +37,8 @@ left-inverse {m} {n} x =
   where
     open import Relation.Binary.PropositionalEquality
     open ≡-Reasoning
+
+splitPermute↔ : (m : ℕ) {n : ℕ} → (𝔽 (m ℕ.+ n) ↔ 𝔽 (n ℕ.+ m))
+splitPermute↔ m {n} = mk↔′ (splitPermute m) (splitPermute n) (inverse {n} {m}) (inverse {m} {n})
+
 ```
