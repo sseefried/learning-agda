@@ -1,7 +1,7 @@
 # Sorting
 
 ```
-module Sorting where
+module Permutations where
 
 open import Data.Nat using (ℕ)
 import Data.Nat as ℕ
@@ -19,6 +19,18 @@ open import Data.Product
 
 Perm : ℕ → Set
 Perm n = 𝔽 n ↔ 𝔽 n
+
+-- 𝔽(m + n) ⇔ 𝔽(m) ⊎ 𝔽(n) ⇔ 𝔽(n) ⊎ 𝔽(m) ⇔ 𝔽(n + m)
+--
+
+
+-- vocabulary
+-- mathematical properties give you ways to prove things
+
+
+
+-- (02) --
+-- (13) --
 
 +1-mod-n : {n : ℕ} → 𝔽 n → 𝔽 n
 +1-mod-n {ℕ.suc n} m with n ℕ.≟ toℕ m
