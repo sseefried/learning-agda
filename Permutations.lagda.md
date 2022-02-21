@@ -18,9 +18,13 @@ module SplitPermute1 where
   splitPermute : (m : ℕ) {n : ℕ} → (𝔽 (m + n) → 𝔽 (n + m))
   splitPermute m {n} = join n m ∘ swap ∘ splitAt m
 
-  cong-[_]∘⟨_⟩∘[_] : {a : Level} {A′ A B B′ : Set a}
-         → ∀ (h : B → B′) {f g : A → B}
-         → f ≗ g  → (h′ : A′ → A) → h ∘ f ∘ h′ ≗ h ∘ g ∘ h′
+  cong-[_]∘⟨_⟩∘[_] :
+    {a : Level} {A′ A B B′ : Set a}
+    → (h : B → B′)
+    → {f g : A → B}
+    → f ≗ g
+    → (h′ : A′ → A)
+    → h ∘ f ∘ h′ ≗ h ∘ g ∘ h′
   cong-[_]∘⟨_⟩∘[_] h {f} {g} f≗g h′ = λ x → cong h (f≗g (h′ x))
     where
       open Relation.Binary.PropositionalEquality using (cong)
@@ -46,7 +50,7 @@ module SplitPermute1 where
 ## A constructive approach
 
 There is no need for proofs with this approach! The proofs are part of
-each `Inverse` record.
+each `Inverse` record. Conal Elliott calls this _compositional correctness_.
 
 ```
 module SplitPermute2 where
