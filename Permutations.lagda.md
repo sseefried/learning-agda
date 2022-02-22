@@ -1,6 +1,6 @@
 # Permutations
 
-```
+```agda
 module Permutations where
 
 module SplitPermute1 where
@@ -52,13 +52,14 @@ module SplitPermute1 where
 There is no need for proofs with this approach! The proofs are part of
 each `Inverse` record. Conal Elliott calls this _compositional correctness_.
 
-```
+```agda
 module SplitPermute2 where
 
   open import Data.Nat using (ℕ; _+_)
   open import Data.Fin renaming (Fin to 𝔽) hiding (_+_)
   open import Data.Fin.Properties hiding (setoid)
   open import Function.Construct.Composition hiding (inverse)
+  open import Function.Construct.Symmetry using (sym-↔)
   open import Function using (mk↔′; _↔_)
   open import Function.Bundles using (Inverse)
   open import Data.Sum
@@ -66,19 +67,9 @@ module SplitPermute2 where
 
   open Inverse
 
-  flip : ∀ {a b} {A : Set a} {B : Set b} → A ↔ B → B ↔ A
-  flip A↔B =
-    record { f = f⁻¹ A↔B
-           ; f⁻¹ = f A↔B
-           ; cong₁ = cong₂ A↔B
-           ; cong₂ = cong₁ A↔B
-           ; inverse = ×-swap (inverse A↔B) }
-    where
-      open import Data.Product using () renaming (swap to ×-swap)
-
   swap↔ : ∀ {a b} {A : Set a} {B : Set b} →  (A ⊎ B) ↔ (B ⊎ A)
   swap↔ {a} {b} {A} {B} = mk↔′ swap swap swap-involutive swap-involutive
 
   splitPermute↔ : (m : ℕ) {n : ℕ} → 𝔽 (m + n) ↔ 𝔽 (n + m)
-  splitPermute↔ m {n} = +↔⊎ {m} {n} ∘-↔ (swap↔ ∘-↔ flip +↔⊎)
+  splitPermute↔ m {n} = (+↔⊎ {m} {n} ∘-↔ swap↔) ∘-↔ sym-↔ +↔⊎
 ```
